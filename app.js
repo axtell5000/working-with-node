@@ -1,18 +1,31 @@
-const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const express = require("express");
 
-function handleRequest(request, response) {
-  if (request.url === "/currenttime") {
-    response.statusCode = 200;
-    response.end("<h1>" + new Date().toISOString() + "</h1>");
-  } else if (request.url === "/") {
-    response.statusCode = 200;
-    response.end("<h1>Hello World!!</h1>");
-  }
-}
+const app = express();
+// middleware to parse what was send / received so we can use it correctly
+app.use(express.urlencoded({ extended: false }));
 
-const server = http.createServer(handleRequest);
+app.get("/currenttime", (request, response) => {
+  response.send("<h1>" + new Date().toISOString() + "</h1>");
+});
 
-server.listen(3000);
+app.get("/", (request, response) => {
+  response.send(
+    "<form action='store-user' method='POST'><label>Your Name</label><input type='text' name='username'><button>Submit</button></form>"
+  );
+});
 
-const userName = "Stephen";
-console.log(userName);
+app.post("/store-user", (request, response) => {
+  const userNmae = request.body.username;
+
+  const filePath = path.join(__dirname, "data", "users.json"); // setting up path to file
+  const fileData = fs.readFileSync(filePath);
+  const existingUsers = JSON.parse(fileData); // parese to JS object type
+  existingUsers.push(userNmae);
+  fs.writeFileSync(filePath, JSON.stringify(existingUsers)); // Parsing back to json structure type
+
+  response.send("<h1>Username stored!</h1>");
+});
+
+app.listen(3000);
